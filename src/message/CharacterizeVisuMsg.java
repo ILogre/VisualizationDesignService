@@ -5,28 +5,22 @@ import transfer.Message;
 public class CharacterizeVisuMsg extends Message {
 	private String dashboardName;
 	private String visuName;
-	private String[] howQualifier;
+	private String[] whatQualifier;
 
-	public CharacterizeVisuMsg(String dashboardName, String visuName, String ... howQualifier) {
+	public CharacterizeVisuMsg(String dashboardName, String visuName, String ... whatQualifier) {
 		super();
 		this.dashboardName = dashboardName;
 		this.visuName = visuName;
-		this.howQualifier = howQualifier;
+		this.whatQualifier = whatQualifier;
 	}
 	public String getDashboardName() {
 		return dashboardName;
 	}
-	public void setDashboardName(String dashboardName) {
-		this.dashboardName = dashboardName;
-	}
 	public String getVisuName() {
 		return visuName;
 	}
-	public void setVisuName(String visuName) {
-		this.visuName = visuName;
-	}
-	public String[] getHowQualifiers() {
-		return howQualifier;
+	public String[] getWhatQualifiers() {
+		return whatQualifier;
 	}
 	
 }

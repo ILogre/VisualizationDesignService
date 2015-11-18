@@ -22,32 +22,17 @@ public class PositionMsg extends Message {
 	public String getDashboardName() {
 		return dashboardName;
 	}
-	public void setDashboardName(String dashboardName) {
-		this.dashboardName = dashboardName;
-	}
 	public String getViewName() {
 		return viewName;
-	}
-	public void setViewName(String viewName) {
-		this.viewName = viewName;
 	}
 	public int getRelativeSize() {
 		return relativeSize;
 	}
-	public void setRelativeSize(int relativeSize) {
-		this.relativeSize = relativeSize;
-	}
 	public List<String> getVisualizations() {
 		return visualizations;
 	}
-	public void setVisualizations(List<String> visualizations) {
-		this.visualizations = visualizations;
-	}
 	public Alignment getLayout() {
 		return layout;
-	}
-	public void setLayout(Alignment layout) {
-		this.layout = layout;
 	}
 	
 
