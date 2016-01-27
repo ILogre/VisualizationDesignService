@@ -8,10 +8,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import transfer.IsValidatedAsw;
-import transfer.IsValidatedMsg;
+import message.CharacterizeVisuMsg;
+import message.DeclareDashboardMsg;
+import message.IsValidatedDashboardAsw;
+import message.IsValidatedDashboardMsg;
+import message.PlugDataMsg;
+import message.PositionMsg;
+import message.ValidateAndPersistDashboardMsg;
+
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.xmi.XMIResource;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
+
 import transfer.Service;
-import transfer.ValidateAndPersistMsg;
 import visualizationDesignLanguage.Cell;
 import visualizationDesignLanguage.Colorization;
 import visualizationDesignLanguage.Container;
@@ -26,20 +39,7 @@ import visualizationDesignLanguage.Visualization;
 import visualizationDesignLanguage.VisualizationDesignLanguageFactory;
 import visualizationDesignLanguage.WhatQualifier;
 import visualizationDesignLanguage.Window;
-import message.CharacterizeVisuMsg;
-import message.DeclareDashboardMsg;
-import message.PlugDataMsg;
-import message.PositionMsg;
-import businessobject.*;
-
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.xmi.XMIResource;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
-
+import businessobject.Alignment;
 import errors.UnknownDashboardException;
 
 /*
@@ -76,6 +76,7 @@ public class VisualizationDesign extends Service {
 		String name = msg.getDashboardName();
 		try{
 			getDashboard(name);
+			System.out.println("--> [Warning] : Dashboard " + name + " already exists" + "\t\t (" + System.currentTimeMillis() + " )");
 		}
 		catch(UnknownDashboardException e){
 			Dashboard d = VisualizationDesignLanguageFactory.eINSTANCE.createDashboard();
@@ -83,7 +84,6 @@ public class VisualizationDesign extends Service {
 			updateDashboard(name, d);;
 			System.out.println("Dashboard " + name + " created" + "\t\t (" + System.currentTimeMillis() + " )");
 		}
-		System.out.println("--> [Warning] : Dashboard " + name + " already exists" + "\t\t (" + System.currentTimeMillis() + " )");
 		validated = false;
 	}
 
@@ -108,7 +108,7 @@ public class VisualizationDesign extends Service {
 			StringBuilder qualif = new StringBuilder();
 			for(String s : msg.getWhatQualifiers())
 				qualif.append(s+" ");
-			System.out.println(visuName + " shows " + qualif.toString() + "\t\t (" + System.currentTimeMillis() + " )");
+			System.out.println("Dashboard "+ dashboardName + " contains "+visuName + " which shows " + qualif.toString() + "\t\t (" + System.currentTimeMillis() + " )");
 			
 			validated = false;
 		} else {
@@ -253,7 +253,7 @@ public class VisualizationDesign extends Service {
 		return dash;
 	}
 	
-	public static void validateAndPersist(ValidateAndPersistMsg msg) throws IOException {
+	public static void validateAndPersist(ValidateAndPersistDashboardMsg msg) throws IOException {
 		String fileName = "resources/" + msg.getModelName() + ".xmi";
 		File file = new File(fileName);
 		Files.deleteIfExists(file.toPath());
@@ -273,7 +273,7 @@ public class VisualizationDesign extends Service {
 
 	}
 	
-	public static IsValidatedAsw isValidated(IsValidatedMsg msg){
-		return new IsValidatedAsw(validated);
+	public static IsValidatedDashboardAsw isValidated(IsValidatedDashboardMsg msg){
+		return new IsValidatedDashboardAsw(validated);
 	}
 }
