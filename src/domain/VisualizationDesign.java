@@ -1,11 +1,17 @@
 package domain;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import transfer.IsValidatedAsw;
+import transfer.IsValidatedMsg;
 import transfer.Service;
+import transfer.ValidateAndPersistMsg;
 import visualizationDesignLanguage.Cell;
 import visualizationDesignLanguage.Colorization;
 import visualizationDesignLanguage.Container;
@@ -34,31 +40,59 @@ import org.eclipse.emf.ecore.xmi.XMIResource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 
+import errors.UnknownDashboardException;
+
+/*
+ * This class represent the domain knowledge of the Visualization Design domain
+ * It implements the exposed operations with EMF stack
+ */
+
 public class VisualizationDesign extends Service {
 
+	static private Map<String,Dashboard> currents = new HashMap<String,Dashboard>();
+	static private boolean validated = false;
+	
+	static private Dashboard getDashboard(String name) throws UnknownDashboardException{
+		if(!currents.containsKey(name)){
+			Dashboard preexisting = loadModel(name);
+			if (preexisting==null){
+				throw new UnknownDashboardException("[ERROR] : Dashboard " + name + " does not exist"+ "\t\t (" + System.currentTimeMillis() + " )");
+			}else{
+				currents.put(name, preexisting); 
+				return preexisting;
+			}
+		}else
+			return currents.get(name);
+	}
+	
+	static private void updateDashboard(String name, Dashboard c){
+		if(!currents.containsKey(name))
+			currents.put(name, c);
+		else
+			currents.replace(name, currents.get(name), c);
+	}
+	
 	public static void declareDashboard(DeclareDashboardMsg msg) {
 		String name = msg.getDashboardName();
-		Dashboard preexisting = loadModel(name);
-		if (preexisting == null) {
-			Dashboard d = VisualizationDesignLanguageFactory.eINSTANCE
-					.createDashboard();
-			d.setName(name);
-			saveModel(d);
-			System.out.println("Dashboard " + name + " created" + "\t\t ("
-					+ System.currentTimeMillis() + " )");
-		} else {
-			System.out.println("--> [Warning] : Dashboard " + name
-					+ " already exists" + "\t\t (" + System.currentTimeMillis()
-					+ " )");
+		try{
+			getDashboard(name);
 		}
+		catch(UnknownDashboardException e){
+			Dashboard d = VisualizationDesignLanguageFactory.eINSTANCE.createDashboard();
+			d.setName(name);
+			updateDashboard(name, d);;
+			System.out.println("Dashboard " + name + " created" + "\t\t (" + System.currentTimeMillis() + " )");
+		}
+		System.out.println("--> [Warning] : Dashboard " + name + " already exists" + "\t\t (" + System.currentTimeMillis() + " )");
+		validated = false;
 	}
 
-	public static void characterizeVisu(CharacterizeVisuMsg msg) {
+	public static void characterizeVisu(CharacterizeVisuMsg msg) throws UnknownDashboardException {
 		String dashboardName = msg.getDashboardName();
 		String visuName = msg.getVisuName();
 		String[] concerns = msg.getWhatQualifiers();
 
-		Dashboard preexisting = loadModel(dashboardName);
+		Dashboard preexisting = getDashboard(dashboardName);
 		if (preexisting != null) {
 			Visualization v = VisualizationDesignLanguageFactory.eINSTANCE
 					.createVisualization();
@@ -66,30 +100,30 @@ public class VisualizationDesign extends Service {
 			for (String s : concerns) {
 				WhatQualifier c = VisualizationDesignLanguageFactory.eINSTANCE
 						.createWhatQualifier();
-				c.setConcern(Taxonomy.valueOf(s));
+				c.setConcern(Taxonomy.valueOf(s.toUpperCase()));
 				v.getConcerns().add(c);
 			}
 			preexisting.getVisualizations().add(v);
-			saveModel(preexisting);
-			System.out.println("Visualization " + visuName + " designed"
-					+ "\t\t (" + System.currentTimeMillis() + " )");
-		} else {
-			System.out.println("--> [ERROR] : Dashboard " + dashboardName
-					+ " does not exist" + "\t\t (" + System.currentTimeMillis()
-					+ " )");
-		}
 
-		System.out.println(visuName + " shows " + msg.getWhatQualifiers()
-				+ "\t\t (" + System.currentTimeMillis() + " )");
+			StringBuilder qualif = new StringBuilder();
+			for(String s : msg.getWhatQualifiers())
+				qualif.append(s+" ");
+			System.out.println(visuName + " shows " + qualif.toString() + "\t\t (" + System.currentTimeMillis() + " )");
+			
+			validated = false;
+		} else {
+			System.out.println("--> [ERROR] : Dashboard " + dashboardName + " does not exist"
+					+ "\t\t (" + System.currentTimeMillis()	+ " )");
+		}
 	}
 
-	public static void plugData(PlugDataMsg msg) {
+	public static void plugData(PlugDataMsg msg) throws UnknownDashboardException {
 		String dashboardName = msg.getDashboardName();
 		String visuName = msg.getVisuName();
 		String dataName = msg.getDataName();
 		Map<String, Map<String, Object>> concerns = msg.getConcerns();
 		
-		Dashboard preexisting = loadModel(dashboardName);
+		Dashboard preexisting = getDashboard(dashboardName);
 		if (preexisting != null) {
 			Source s = VisualizationDesignLanguageFactory.eINSTANCE.createSource();
 			s.setName(dataName);
@@ -125,14 +159,16 @@ public class VisualizationDesign extends Service {
 				}
 			}
 			visu.getDisplays().add(s);
-			saveModel(preexisting);
+
 			System.out.println("Data \"" + dataName	+ "\" pluged on visualization \"" + visuName + " with concerns "
 					+ concerns + " in dashboard " + dashboardName + "\t\t (" + System.currentTimeMillis() + " )");
+			
+			validated = false;
 		} else {System.out.println("--> [ERROR] : Dashboard " + dashboardName + " does not exist" + "\t\t (" + System.currentTimeMillis() + " )");}
 		
 	}
 
-	public static void position(PositionMsg msg) {
+	public static void position(PositionMsg msg) throws UnknownDashboardException {
 		String dashboardName = msg.getDashboardName();
 		String viewName = msg.getViewName();
 		int relativeSize = msg.getRelativeSize();
@@ -140,7 +176,7 @@ public class VisualizationDesign extends Service {
 		// String container= (horizontal)?"Line":"Column";
 		List<String> visualizations = msg.getVisualizations();
 		
-		Dashboard preexisting = loadModel(dashboardName);
+		Dashboard preexisting = getDashboard(dashboardName);
 		if (preexisting != null) {
 			Window wind = null;
 			Boolean newview = true;
@@ -175,18 +211,14 @@ public class VisualizationDesign extends Service {
 			wind.getOrganizes().add(c);
 			if(newview)
 				preexisting.getWindows().add(wind);
-			saveModel(preexisting);
+
+			validated = false;
 			
 			System.out.println("View \"" + viewName + "\" is a " + layout + " sized " + relativeSize
 					+ " containing the visualizations "	+ visualizations + " in dashboard " + dashboardName
 					+ "\t\t (" + System.currentTimeMillis() + " )");
 			
 		} else {System.out.println("--> [ERROR] : Dashboard " + dashboardName + " does not exist" + "\t\t (" + System.currentTimeMillis() + " )");}
-		
-		
-
-
-
 	}
 	
 	private static Visualization locateVisualization(String name, Dashboard d){
@@ -211,6 +243,7 @@ public class VisualizationDesign extends Service {
 		try {
 			resource.load(null);
 		} catch (IOException e) {
+			System.out.println(e.getMessage());
 			return null;
 		}
 
@@ -219,14 +252,16 @@ public class VisualizationDesign extends Service {
 
 		return dash;
 	}
-
-	public static void saveModel(Dashboard d) {
-		String fileName = "resources/" + d.getName() + ".xmi";
+	
+	public static void validateAndPersist(ValidateAndPersistMsg msg) throws IOException {
+		String fileName = "resources/" + msg.getModelName() + ".xmi";
+		File file = new File(fileName);
+		Files.deleteIfExists(file.toPath());
 
 		ResourceSet resSet = new ResourceSetImpl();
 		resSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 		Resource res = resSet.createResource(URI.createFileURI(fileName));
-		res.getContents().add(d);
+		res.getContents().add(currents.get(msg.getModelName()));
 
 		try {
 			res.save(Collections.EMPTY_MAP);
@@ -234,6 +269,11 @@ public class VisualizationDesign extends Service {
 			System.err.println("ERREUR sauvegarde du modèle : " + e);
 			e.printStackTrace();
 		}
+		validated = true;
 
+	}
+	
+	public static IsValidatedAsw isValidated(IsValidatedMsg msg){
+		return new IsValidatedAsw(validated);
 	}
 }
