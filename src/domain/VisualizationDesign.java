@@ -121,12 +121,17 @@ public class VisualizationDesign extends Service {
 		String dashboardName = msg.getDashboardName();
 		String visuName = msg.getVisuName();
 		String dataName = msg.getDataName();
+		String dataLocation = msg.getDataLocation();
+		String dataType = msg.getDataType();
+		
 		Map<String, Map<String, Object>> concerns = msg.getConcerns();
 		
 		Dashboard preexisting = getDashboard(dashboardName);
 		if (preexisting != null) {
 			Source s = VisualizationDesignLanguageFactory.eINSTANCE.createSource();
 			s.setName(dataName);
+			s.setLocation(dataLocation);
+			s.setType(dataType);
 			for (String c : concerns.keySet()) {
 				switch (c){
 					case "Icon":
