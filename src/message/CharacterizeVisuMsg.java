@@ -5,13 +5,13 @@ import transfer.Message;
 public class CharacterizeVisuMsg extends Message {
 	private String dashboardName;
 	private String visuName;
-	private String[] whatQualifier;
+	private String[] whatQualifiers;
 
 	public CharacterizeVisuMsg(String dashboardName, String visuName, String ... whatQualifier) {
 		super();
 		this.dashboardName = dashboardName;
 		this.visuName = visuName;
-		this.whatQualifier = whatQualifier;
+		this.whatQualifiers = whatQualifier;
 	}
 	public String getDashboardName() {
 		return dashboardName;
@@ -20,7 +20,7 @@ public class CharacterizeVisuMsg extends Message {
 		return visuName;
 	}
 	public String[] getWhatQualifiers() {
-		return whatQualifier;
+		return whatQualifiers;
 	}
 	
 }
